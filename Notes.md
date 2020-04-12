@@ -41,7 +41,7 @@
 
 ## 2.B
 - Braketize Year?
-- ... RegEx?
+- ... RegEx? Just type a year?
 - Then rename
 
 ## 2.C
