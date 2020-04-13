@@ -35,7 +35,8 @@ class MovieOrganizer():
         while self.files:
             self.filename = self.files.pop()
             print("File to change: ", self.filename)
-            while True:
+            loop=True
+            while loop:
                 # Prompt for input: Movie or Show
                 tmp = input('\n\nIs it a Movie (1) or a TV Show (2)?\nPress 0 to skip\n')
                 if not self.correctInput(tmp, 2):
@@ -44,17 +45,14 @@ class MovieOrganizer():
                 #Use input as intiger
                 if input_int==0:
                     print("\nSKIP\n")
-                    break
+                    loop=False #break
                 elif input_int==1:
-                    out = self.movie(self.filename)
+                    loop = self.movie()
                     print("\nMovie\n")
-                    if out == True:
-                        break
                 elif input_int==2:
-                    out = self.show(self.filename)
+                    loop = self.show()
                     print("\nTV Show\n")
-                    if out == True:
-                        break
+
 
 
     def splitNameAndExtension(self, file):
@@ -86,30 +84,64 @@ class MovieOrganizer():
         return out
 
     def movie(self):
+        outer_loop = True # The return value to break the loop in handleFiles()
+        while True:
+            TD_out=self.titleDelimiter()
+            if TD_out:
+                break
+        while True:
+            NL_out=self.newLength()
+            if NL_out:
+                break
+        while True:
+            YB_out=self.yearBraket()
+            if YB_out:
+                break
+        return outer_loop
+
+    def show(self):
+        pass
+
+    def titleDelimiter(self):
         out=False
-        delim=Input('File: '+ self.filename +
-                    '\nSplit with delimeter: ?\n')
+        # Request Input from User
+        delim=input('File: '+ self.filename +
+                    '\nSplit with delimeter --> ')
         # Sanitize delimeter input
         try:
             delim=str(delim)
             delim.strip()
         except:
             return out
-
+        #Check if input was a proper delimeter
         if delim not in self.delims:
             print("Not a recognized delimeter.")
             return out
+        # Split title or dont if the delimiter is ''
+        if delim != '':
+            filename_split = self.filename.replace(delim, " ")
+        else:
+            filename_split = self.filename
+        # Show resultant title and confirm with user
+        print("New Filename: ", filename_split)
+        user_input=input("Was the title broken up correctly? (Y/n) --> ")
+        if user_input == 'n' or user_input=='N':
+            out = False
+        else:
+            self.new_filename = filename_split
+            print(self.new_filename)
+            out = True
+            # os.system("mkdir -p "+self.output_folder+"/"+file_folder)
+        # Return
+        return out
 
-        file_split = self.filename.replace(delim, " ")
-        os.system("mkdir -p "+self.output_folder+"/"+file_folder)
+
+
+    def newLength(self):
         pass
 
-    def show(self, file):
+    def yearBraket(self):
         pass
-
-
-
-
 
 
 if __name__=="__main__":
