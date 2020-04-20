@@ -17,8 +17,8 @@ class MovieOrganizer():
 
     def parseInput(self):
         # List everything in the working folder
-        folders= str(  os.popen('ls '+self.input_folder+'/*/').read()  ).split('\n')
-        self.folders= [x for x in folders if x]
+        folders= str(  os.popen('ls -p '+self.input_folder+' | grep /').read()  ).split('\n')
+        self.folders= [x for x in folders if x] #Strip empty entries
         files  = str(  os.popen('ls -p '+self.input_folder+' | grep -v /').read()  ).split('\n')
         self.files= [x for x in files if x]
         while folders:
@@ -29,24 +29,93 @@ class MovieOrganizer():
             print("Files: ", tmp)
 
     def handleFolders(self):
-        pass
+        try:
+            self.foldername = self.folders[0]
+            loop=True
+        except:
+            print("No More Folders")
+            loop = False
+
+        while loop:
+            # List contents of folder
+            print("Which of these is the video file?")
+            print("CMD: ", "ls " + self.input_folder + "/" + self.foldername)
+            ls = os.popen("ls \"" + self.input_folder + "/" + self.foldername + "\"").read().split('\n')
+            # If the folder is empty, skip
+            if len(ls) == 0:
+                break
+            # Loop through the folder contents and display them
+            idx=0
+            for l in ls:
+                if l == '':
+                    continue
+                print( "(",idx, ") ", l )
+                idx += 1
+            # Ask user to select which file is the video
+            tmp = input('? --> ')
+            if not self.correctInput(tmp, idx-1):
+                print("\n\n\n")
+                continue
+            # Set filename and do the renaming
+            self.filename=str( ls[int(tmp)] )
+            break
+
+        self.splitNameAndExtension()
+        while loop:
+            # Prompt for input: Movie or Show
+            print("\n\nFile to change: ", self.new_filename)
+            tmp = input('Is it a Movie (1) or a TV Show (2)? Press (0) to skip\n')
+            if not self.correctInput(tmp, 2):
+                continue
+            input_int = int(tmp)
+            #Use input as intiger
+            if input_int==0:
+                print("\nSKIP\n")
+                loop=False #break
+            elif input_int==1:
+                loop = self.movie()
+                print("\nMovie\n")
+            elif input_int==2:
+                loop = self.show()
+                print("\nTV Show\n")
+            # Prompt user to change filename and move OR restart
+            if loop:
+                continue #Ignore if the other methods failed
+            #Prompt to Restart process or move to output folder
+            print('Output folder: ', self.output_folder+'/'+self.new_filename)
+            tmp = input('\n\nThe new name will be: \"' +self.new_filename+self.year+self.ext+ '\" \
+            \nIs this correct? (Y/n) --> ')
+            if tmp=='n' or tmp=='N':
+                loop=True
+            else:
+                #Make destination folder
+                os.system("mkdir -p " + "\"" + self.output_folder + '/' + self.new_filename +"\"")
+                #Move Entire Folder Contents
+                os.system("mv " + "\"" + self.input_folder +"/" +self.foldername + "\"" + "/* " + \
+                    "\"" + self.output_folder + "/" + self.new_filename + "\"")
+                #Rename Movie File
+                os.system("mv " + "\"" + self.output_folder + "/" + self.new_filename + "/" + self.filename + "\"" + " " + \
+                    "\"" + self.output_folder + "/" + self.new_filename + "/" + self.new_filename+self.year+self.ext + "\"")
+                # os.system("mv " + "\"" + self.input_folder + "/" + self.foldername + "/" + self.filename + "\"" + " " + \
+                #     "\"" + self.output_folder + "/" + self.new_filename + "/" + self.new_filename+self.year+self.ext + "\"")
 
     def handleFiles(self):
         while self.files:
             self.filename = self.files.pop()
             self.splitNameAndExtension()
-            print("File to change: ", self.new_filename)
             loop=True
             while loop:
                 # Prompt for input: Movie or Show
-                tmp = input('\n\nIs it a Movie (1) or a TV Show (2)? Press (0) to skip\n')
+                print("\n\nFile to change: ", self.new_filename)
+                tmp = input('Is it a Movie (1) or a TV Show (2)? Press (0) to skip\n')
                 if not self.correctInput(tmp, 2):
                     continue
                 input_int = int(tmp)
                 #Use input as intiger
                 if input_int==0:
                     print("\nSKIP\n")
-                    loop=False #break
+                    loop=False
+                    break
                 elif input_int==1:
                     loop = self.movie()
                     print("\nMovie\n")
@@ -56,15 +125,20 @@ class MovieOrganizer():
                 # Prompt user to change filename and move OR restart
                 if loop:
                     continue #Ignore if the other methods failed
-                #Prompt
-                #restart?
-                #copy to output_folder?
+                #Prompt to Restart process or move to output folder
+                print('Output folder: ', self.output_folder,'/',self.new_filename)
+                tmp = input('\n\nThe new name will be: \"' +self.new_filename+self.year+self.ext+ '\" \
+                \nIs this correct? (Y/n) --> ')
+                if tmp=='n' or tmp=='N':
+                    loop=True
+                else:
+                    os.system("mkdir -p " + "\"" + self.output_folder + '/' + self.new_filename +"\"")
+                    os.system("mv " + "\"" + self.input_folder + "/" + self.filename + "\"" + " " + \
+                        "\"" + self.output_folder + "/" + self.new_filename + "/" + self.new_filename+self.year+self.ext + "\"")
 
 
     def splitNameAndExtension(self):
-        print(self.filename)
         idx = len(self.filename) #file is the filename string
-        print("idx Prior ", idx)
         while True:
             idx-=1
             tmp = self.filename[idx]
@@ -114,6 +188,7 @@ class MovieOrganizer():
         return outer_loop_continue # Return False to break the outer loop in handleFiles()
 
     def show(self):
+        #
         pass
 
     def titleDelimiter(self):
@@ -216,21 +291,16 @@ class MovieOrganizer():
                     '\nAdd year to the end of title (hit enter for no year) --> ')
         # Sanitize trim number input
         try:
-            year=str(year)
+            self.year = ' ('+str(year)+')'
         except:
             print("Input Error")
             return out
         # Add year to filename
-        if year != '':
-            filename_year = self.new_filename + ' ('+year+')'
-        else:
-            filename_year = self.new_filename
+        filename_year = self.new_filename + self.year
         # Display filename to the User and confirm
         print("New Filename: ", filename_year)
-        user_input=input("Was the title shortened correctly? (y/N) --> ")
+        user_input=input("Was the year added correctly? (y/N) --> ")
         if user_input == 'y' or user_input=='Y':
-            self.new_filename = filename_year
-            print(self.new_filename)
             out = True
         else:
             out = False
@@ -250,4 +320,5 @@ if __name__=="__main__":
     MO = MovieOrganizer(input_folder, output_folder)
     MO.parseInput()
     print('\n \n \n')
-    MO.handleFiles()
+    # MO.handleFiles()
+    MO.handleFolders()
