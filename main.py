@@ -64,7 +64,7 @@ class MovieOrganizer(object):
             if not self.correctInput(tmp, idx-1):
                 print("\n\n\n")
                 continue
-            # Set filename and do the renaming
+            # Set filename and move on to renaming
             self.filename['old']=str( ls[int(tmp)] )
 
             #Loop to contain movie/show selection. Also contain rename confirm and move operation.
@@ -201,8 +201,19 @@ class MovieOrganizer(object):
         return outer_loop_continue # Return False to break the outer loop in handleFiles()
 
     def show(self):
-        #
-        pass
+        outer_loop_continue=True
+        while True:
+            FS_out=self.findShow()
+            if FS_out:
+                break
+
+        while True:
+            SS_out =self.selectSeason()
+            if SS_out:
+                break
+
+        outer_loop_continue=False
+        return outer_loop_continue # Return False to break the outer loop in handleFiles()
 
     def titleDelimiter(self):
         out=False
@@ -324,6 +335,47 @@ class MovieOrganizer(object):
             out = False
         # Return
         return out
+
+    def findShow(self):
+        out = False
+        #List possible shows
+        ls = os.popen("ls -p \"" + self.output_folder + "\" | grep /").read().split('\n')
+        # If the folder is empty, notify and offer to add new show
+        empty = len(ls)==0 or (len(ls)==1 and ls[0]=='')
+        if empty:
+            print("The output folder is empty. Creating new show.")
+            out=self.newShow()
+        else: #not empty
+            # Loop through the folder contents and display them
+            idx=1
+            for l in ls:
+                if l == '':
+                    continue
+                # print( "(",idx, ") ", l )
+                print( "( "+str(idx)+" )    " + str(l) )
+                idx += 1
+            # Ask user to select which folder represents the show
+            print("\n\nIs this a pre-existing show? (0 for a new show)")
+            tmp = input('? --> ')
+            if not self.correctInput(tmp, idx-1):
+                print("\n\n\n")
+                return False
+            input_int = int(tmp)
+            if input_int != 0:
+                self.show_folder=str( ls[int(tmp)] )
+                out=True
+            else:
+                out=self.newShow()
+        # Return
+        return out
+
+    def newShow(self):
+        print("NEW SHOW")
+        return True
+
+    def selectSeason(Self):
+        #Select season based on a single number. output Season #
+        return True
 
     def episodeNumber(self):
         pass
